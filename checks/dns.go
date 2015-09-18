@@ -54,8 +54,18 @@ func NewRaintankDnsProbe(body []byte) (*RaintankProbeDns, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse settings. " + err.Error())
 	}
+	if p.Port == "" {
+		p.Port = "53"
+	}
 	if port, err := strconv.ParseInt(p.Port, 10, 32); err != nil || port < 1 || port > 65535 {
 		return nil, fmt.Errorf("failed to parse settings. Invalid port")
+	}
+	if p.Protocol == "" {
+		p.Protocol = "udp"
+	}
+	p.Protocol = strings.ToLower(p.Protocol)
+	if !(p.Protocol == "udp" || p.Protocol == "tcp") {
+		return nil, fmt.Errorf("failed to parse settings. Invalid protocol")
 	}
 	return &p, nil
 }
@@ -75,7 +85,7 @@ func (p *RaintankProbeDns) Run() error {
 	}
 
 	servers := strings.Split(p.Server, ",")
-
+	// fix failed to respond with upper case
 	c := dns.Client{Net: p.Protocol}
 	m := dns.Msg{}
 	m.SetQuestion(p.RecordName+".", recordTypeToWireType[p.RecordType])
